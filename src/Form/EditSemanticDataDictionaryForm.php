@@ -70,28 +70,46 @@ class EditSemanticDataDictionaryForm extends FormBase {
       '#markup' => '<h3 class="mt-3 mb-5">' . $this->t('Edit Semantic Data Dictionary') . '</h3>',
     ];
 
-    // Display Mode
-    $display_mode = $form_state->getValue('display_mode', 'prefix:uri');
-    $form['header']['display_mode'] = [
-      '#type'          => 'select',
-      '#title'         => $this->t('Display Mode'),
-      '#options'       => [
-        'prefix:uri'   => $this->t('Prefix: URI'),
-        'prefix:label' => $this->t('Prefix: Label'),
-        'label'        => $this->t('Just Label'),
-      ],
-      '#default_value' => $display_mode,
-      '#wrapper_attributes' => [
-        // se quiser limitar a largura
-        'style' => 'max-width: 350px;',
-      ],
-      '#ajax' => [
-        'callback' => '::displayModeAjaxCallback',
-        'event'    => 'change',
-        'wrapper'  => 'dict-wrapper',
-        'progress' => ['type' => 'throbber'],
-      ],
-    ];
+   // Display Mode + Validation button (side by side)
+      $display_mode = $form_state->getValue('display_mode', 'prefix:uri');
+
+      $form['header']['controls'] = [
+        '#type' => 'container',
+        '#attributes' => [
+          'class' => ['d-flex', 'align-items-center', 'gap-2',],
+          'style' => 'max-width: 520px;',
+        ],
+      ];
+
+      // Validation button
+      $form['header']['controls']['validation_button'] = [
+        '#type' => 'button',
+        '#value' => $this->t('Validation'),
+        '#attributes' => [
+          'class' => ['btn', 'btn-outline-secondary'],
+        ],
+      ];
+
+      // Select Display Mode
+      $form['header']['controls']['display_mode'] = [
+        '#type'          => 'select',
+        '#title'         => $this->t('Display Mode'),
+        '#options'       => [
+          'prefix:uri'   => $this->t('Prefix: URI'),
+          'prefix:label' => $this->t('Prefix: Label'),
+          'label'        => $this->t('Just Label'),
+        ],
+        '#default_value' => $display_mode,
+        '#wrapper_attributes' => [
+          'style' => 'max-width: 350px;',
+        ],
+        '#ajax' => [
+          'callback' => '::displayModeAjaxCallback',
+          'event'    => 'change',
+          'wrapper'  => 'dict-wrapper',
+          'progress' => ['type' => 'throbber'],
+        ],
+      ];
 
     if ($state === 'init') {
       // READ SEMANTIC_DATA_DICTIONARY
