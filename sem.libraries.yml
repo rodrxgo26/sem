@@ -24,6 +24,9 @@ sem_search_icons:
 
 sem_custom_validation:
   version: 1.x
+  css:
+    theme:
+      css/sem_validation.css: {}
   js:
     js/sem_custom_validation.js: {}
   dependencies:

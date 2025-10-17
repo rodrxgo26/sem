@@ -1,0 +1,59 @@
+/* The main container that will hold the icon and the tooltip */
+.tooltip-wrapper {
+  position: relative; /* Essential for tooltip positioning */
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 5px;
+}
+
+/* The 'i' error icon (slightly adjusted) */
+.namespace-error-icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 50%;
+  background-color: #dc3545;
+  color: white;
+  font-weight: bold;
+  font-family: sans-serif;
+  font-size: 12px;
+  cursor: help;
+}
+
+/* The tooltip text (hidden by default) */
+.custom-tooltip-text {
+  visibility: hidden; /* Hidden by default */
+  min-width: 280px; /* Minimum width to ensure the text fits */
+  background-color: #333; /* Dark background */
+  color: #fff; /* White text */
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px 12px;
+  position: absolute; /* Absolute positioning relative to the wrapper */
+  z-index: 1;
+  bottom: 150%; /* Position above the 'i' icon */
+  left: 50%;
+  transform: translateX(-50%); /* Trick to center the tooltip */
+  opacity: 0; /* Starts invisible for the fade-in effect */
+  transition: opacity 0.3s; /* Smooth transition effect */
+}
+
+/* The tooltip arrow (created with CSS borders) */
+.custom-tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%; /* At the bottom of the tooltip box */
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent; /* Trick to create a triangle */
+}
+
+/* Shows the tooltip on hover over the container */
+.tooltip-wrapper:hover .custom-tooltip-text {
+  visibility: visible; /* Makes the tooltip visible */
+  opacity: 1; /* Makes the tooltip opaque */
+}
