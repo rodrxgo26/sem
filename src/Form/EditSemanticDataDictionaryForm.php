@@ -16,8 +16,11 @@ use Drupal\rep\Utils;
 use Drupal\rep\Entity\Tables;
 use Drupal\rep\Vocabulary\HASCO;
 use Drupal\rep\Vocabulary\REPGUI;
+use Drupal\sem\Form\SemanticDataDictionaryValidationTrait;
 
 class EditSemanticDataDictionaryForm extends FormBase {
+
+  use SemanticDataDictionaryValidationTrait;
 
   protected $state;
 
@@ -57,6 +60,7 @@ class EditSemanticDataDictionaryForm extends FormBase {
     $form['#attached']['library'][] = 'rep/rep_modal';
     $form['#attached']['library'][] = 'core/drupal.dialog';
     $form['#attached']['library'][] = 'core/drupal.ajax';
+    $form['#attached']['library'][] = 'sem/sem_custom_validation';
 
     // Header com título à esquerda e select à direita
     $form['header'] = [
@@ -490,65 +494,6 @@ class EditSemanticDataDictionaryForm extends FormBase {
 
     return $response;
   }
-
- public function validateFormCallback(array &$form, FormStateInterface $form_state) {
-  try {
-    $response = new AjaxResponse();
-
-    $input = $form_state->getUserInput();
-    $invalid_fields = [];
-
-    $tables = new \Drupal\rep\Entity\Tables();
-    $namespaces_array = $tables->getNamespaces();
-    
-    $prefixString = '';
-    if (is_array($namespaces_array)) {
-        $prefixString = implode(' ', array_keys($namespaces_array));
-    }
-
-    $checkNamespace = function($str) use ($prefixString) {
-      if ($str === NULL || $str === '') {
-        return TRUE;
-      }
-      if (strpos($str, ':') !== FALSE) {
-        [$prefixname] = explode(':', $str, 2);
-        if (strpos($prefixString, $prefixname) === FALSE) {
-          return FALSE;
-        }
-      }
-      return TRUE;
-    };
-
-    foreach ($input as $name => $value) {
-      if (preg_match('/_(attribute|is_attribute_of|unit|entity|role|relation|class)$/', $name)) {
-        if (!$checkNamespace($value)) {
-          $invalid_fields[] = $name;
-        }
-      }
-    }
-
-    $response->addCommand(new InvokeCommand('input[name^="variable_"], input[name^="object_"], input[name^="code_"]', 'css', ['border', '']));
-    $response->addCommand(new InvokeCommand('input[name^="variable_"], input[name^="object_"], input[name^="code_"]', 'css', ['background-color', '']));
-
-    if (!empty($invalid_fields)) {
-      foreach ($invalid_fields as $field) {
-        $response->addCommand(new InvokeCommand("input[name='$field']", 'css', ['border', '2px solid red']));
-        $response->addCommand(new InvokeCommand("input[name='$field']", 'css', ['background-color', '#f8d7da']));
-      }
-      $response->addCommand(new MessageCommand($this->t('Validation failed: Some fields do not respect namespace rules.'), NULL, ['type' => 'error']));
-    } else {
-      $response->addCommand(new MessageCommand($this->t('Validation successful: All fields respect the namespace rules.'), NULL, ['type' => 'status']));
-    }
-
-    return $response;
-
-  } catch (\Throwable $e) {
-    \Drupal::logger('sem_validation')->error($e->getMessage());
-    $response = new AjaxResponse();
-    $response->addCommand(new MessageCommand($this->t('A critical error occurred during validation: @msg', ['@msg' => $e->getMessage()]), NULL, ['type' => 'error']));
-    return $response;
-  }
-}
 
   /******************************
    *
@@ -1942,3 +1887,6 @@ class EditSemanticDataDictionaryForm extends FormBase {
   }
 
 }
+
+
+#Criar uma função validate á parte

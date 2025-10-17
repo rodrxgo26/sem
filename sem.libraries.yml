@@ -21,3 +21,11 @@ sem_search_icons:
   css:
     theme:
       css/sem_search_icons.css: {}
+
+sem_custom_validation:
+  version: 1.x
+  js:
+    js/sem_custom_validation.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
