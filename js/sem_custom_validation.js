@@ -1,101 +1,62 @@
 (function ($, Drupal) {
   'use strict';
 
-  $(document).ajaxComplete(function (event, xhr, settings) {
-    
-    const wrapper = $('#dict-wrapper');
-    const prefixesJson = wrapper.attr('data-valid-prefixes');
+  // Renamed function for clarity. It now processes all validation results.
+  $.fn.processValidationResults = function(results) {
 
-    if (!prefixesJson) {
-      return;
-    }
-    
-    const validPrefixes = JSON.parse(prefixesJson);
-    let invalidItems = [];
+    // --- PART 1: UPDATE TAB BADGES (Same as before) ---
 
-    // CHANGED: The function now accepts the jQuery field object ($field) as a second argument.
-    const getValidationErrors = function(value, $field) {
-  let errors = [];
-  const fieldName = $field.attr('name');
+    $('.validation-badge').remove();
+    const tabMap = {
+      'basic': 'button_basic',
+      'dictionary': 'button_dictionary',
+      'codebook': 'button_codebook'
+    };
+    const errorCounts = results.error_counts;
 
-  // --- Rule 1: Check for required fields ---
-  const isRequired = 
-    fieldName.startsWith('variable_column_') ||
-    fieldName.startsWith('variable_attribute_') ||
-    fieldName.startsWith('variable_is_attribute_of_') ||
-    fieldName.startsWith('object_column_') ||
-    fieldName.startsWith('object_entity_');
-
-  if (isRequired && (value === null || value.trim() === '')) {
-    errors.push('This field cannot be empty.');
-    return errors;
-  }
-
-  // --- Rule 2: Check for namespace format on specific fields ---
-
-  // Define which fields should have the "prefix:value" format.
-  // This excludes the 'column' fields.
-  const requiresNamespace = 
-    !fieldName.startsWith('variable_column_') &&
-    !fieldName.startsWith('object_column_');
-
-  // Only apply namespace validation if the field requires it AND is not empty.
-  if (requiresNamespace && value !== null && value.trim() !== '') {
-    if (value.includes(':')) {
-      const prefix = value.split(':', 1)[0];
-      if (!validPrefixes.includes(prefix)) {
-        errors.push('The prefix "' + prefix + '" is not a valid namespace.');
+    for (const tabKey in errorCounts) {
+      if (tabMap.hasOwnProperty(tabKey)) {
+        const buttonName = tabMap[tabKey];
+        const count = errorCounts[tabKey];
+        const $button = $('input[name="' + buttonName + '"]');
+        if ($button.length) {
+          const $badge = $('<span class="validation-badge"></span>');
+          $badge.text(count);
+          $badge.addClass(count > 0 ? 'errors' : 'no-errors');
+          $button.after($badge);
+        }
       }
-    } else {
-      errors.push('The value must be in the format "prefix:value".');
     }
-  }
 
-  return errors;
-};
+    // --- PART 2: HIGHLIGHT SPECIFIC INVALID FIELDS (Functionality restored) ---
 
-    // CHANGED: The selector now includes the 'column' fields to ensure they are validated.
-    const fieldsToValidate = $('input[name*="variable_column_"], input[name*="variable_attribute_"], input[name*="_is_attribute_of_"], input[name*="_unit_"], input[name*="object_column_"], input[name*="object_entity_"], input[name*="_role_"], input[name*="_relation_"], input[name*="_class_"]');
-    
-    // Clear previous error styles and icons
-    fieldsToValidate.css({'border': '', 'background-color': ''});
+    // First, clear all previous field-level error styles
+    $('input[name^="variable_"], input[name^="object_"]').css({'border': '', 'background-color': ''});
     $('.tooltip-wrapper').remove();
-    $('.drupal-message').remove();
 
-    fieldsToValidate.each(function () {
-      const $field = $(this);
-      // CHANGED: Pass the field object itself to the validation function.
-      const errors = getValidationErrors($field.val(), $field);
-      
-      if (errors.length > 0) {
-        invalidItems.push({ field: $field, errors: errors });
+    const detailedErrors = results.detailed_errors;
+    if (detailedErrors) {
+      for (const fieldName in detailedErrors) {
+        const $field = $('input[name="' + fieldName + '"]');
+
+        // Check if the field is visible on the current tab
+        if ($field.length > 0) {
+          const errors = detailedErrors[fieldName];
+          const errorCount = errors.length;
+          const tooltipMessage = errors.join('\n');
+
+          // Apply the error style to the field.
+          $field.css({'border': '2px solid red', 'background-color': '#f8d7da'});
+
+          // Create and append the tooltip icon
+          const $tooltipWrapper = $('<span class="tooltip-wrapper"></span>');
+          const $errorIcon = $('<span class="namespace-error-icon">' + errorCount + '</span>');
+          const $tooltipText = $('<span class="custom-tooltip-text">' + tooltipMessage + '</span>');
+          $tooltipWrapper.append($errorIcon).append($tooltipText);
+          $field.after($tooltipWrapper);
+        }
       }
-    });
-
-    const messages = new Drupal.Message();
-    if (invalidItems.length > 0) {
-
-      invalidItems.forEach(function(item) {
-        const $field = item.field;
-        const errors = item.errors;
-        const errorCount = errors.length;
-        const tooltipMessage = errors.join('\n');
-
-        $field.css({'border': '2px solid red', 'background-color': '#f8d7da'});
-
-        const $tooltipWrapper = $('<span class="tooltip-wrapper"></span>');
-        const $errorIcon = $('<span class="namespace-error-icon">' + errorCount + '</span>');
-        const $tooltipText = $('<span class="custom-tooltip-text">' + tooltipMessage + '</span>');
-        
-        $tooltipWrapper.append($errorIcon).append($tooltipText);
-        $field.after($tooltipWrapper);
-      });
-      
-      messages.add('Validation complete: ' + invalidItems.length + ' fields have errors.', { type: 'error' });
-
-    } else {
-      messages.add('Validation complete: No errors were found.', { type: 'status' });
     }
-  });
+  };
 
 })(jQuery, Drupal);
