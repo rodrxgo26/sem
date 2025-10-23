@@ -11,60 +11,87 @@
     }
     
     const validPrefixes = JSON.parse(prefixesJson);
-    let invalidFields = [];
+    let invalidItems = [];
 
-    const checkNamespace = function(value) {
-      if (value === null || value === '') return true;
-      if (value.includes(':')) {
-        const prefix = value.split(':', 1)[0];
-        return validPrefixes.includes(prefix);
+    // CHANGED: The function now accepts the jQuery field object ($field) as a second argument.
+    const getValidationErrors = function(value, $field) {
+  let errors = [];
+  const fieldName = $field.attr('name');
+
+  // --- Rule 1: Check for required fields ---
+  const isRequired = 
+    fieldName.startsWith('variable_column_') ||
+    fieldName.startsWith('variable_attribute_') ||
+    fieldName.startsWith('variable_is_attribute_of_') ||
+    fieldName.startsWith('object_column_') ||
+    fieldName.startsWith('object_entity_');
+
+  if (isRequired && (value === null || value.trim() === '')) {
+    errors.push('This field cannot be empty.');
+    return errors;
+  }
+
+  // --- Rule 2: Check for namespace format on specific fields ---
+
+  // Define which fields should have the "prefix:value" format.
+  // This excludes the 'column' fields.
+  const requiresNamespace = 
+    !fieldName.startsWith('variable_column_') &&
+    !fieldName.startsWith('object_column_');
+
+  // Only apply namespace validation if the field requires it AND is not empty.
+  if (requiresNamespace && value !== null && value.trim() !== '') {
+    if (value.includes(':')) {
+      const prefix = value.split(':', 1)[0];
+      if (!validPrefixes.includes(prefix)) {
+        errors.push('The prefix "' + prefix + '" is not a valid namespace.');
       }
-      return false;
-    };
+    } else {
+      errors.push('The value must be in the format "prefix:value".');
+    }
+  }
 
-    const fieldsToValidate = $('input[name*="_attribute_"], input[name*="_is_attribute_of_"], input[name*="_unit_"], input[name*="_entity_"], input[name*="_role_"], input[name*="_relation_"], input[name*="_class_"]');
+  return errors;
+};
+
+    // CHANGED: The selector now includes the 'column' fields to ensure they are validated.
+    const fieldsToValidate = $('input[name*="variable_column_"], input[name*="variable_attribute_"], input[name*="_is_attribute_of_"], input[name*="_unit_"], input[name*="object_column_"], input[name*="object_entity_"], input[name*="_role_"], input[name*="_relation_"], input[name*="_class_"]');
     
     // Clear previous error styles and icons
     fieldsToValidate.css({'border': '', 'background-color': ''});
-    $('.tooltip-wrapper').remove(); // CHANGED: Removes the old tooltip container
+    $('.tooltip-wrapper').remove();
     $('.drupal-message').remove();
 
     fieldsToValidate.each(function () {
-      if (!checkNamespace($(this).val())) {
-        invalidFields.push($(this));
+      const $field = $(this);
+      // CHANGED: Pass the field object itself to the validation function.
+      const errors = getValidationErrors($field.val(), $field);
+      
+      if (errors.length > 0) {
+        invalidItems.push({ field: $field, errors: errors });
       }
     });
 
     const messages = new Drupal.Message();
-    if (invalidFields.length > 0) {
-      // The message that will appear inside our custom tooltip.
-      const tooltipMessage = 'Error: This value does not follow the NameSpace rule (e.g., "prefix:value").';
+    if (invalidItems.length > 0) {
 
-      invalidFields.forEach(function($field) {
-        // Apply the error style to the field
+      invalidItems.forEach(function(item) {
+        const $field = item.field;
+        const errors = item.errors;
+        const errorCount = errors.length;
+        const tooltipMessage = errors.join('\n');
+
         $field.css({'border': '2px solid red', 'background-color': '#f8d7da'});
 
-        // ==========================================================
-        // CHANGED LOGIC TO CREATE THE CUSTOM TOOLTIP
-        // ==========================================================
-        
-        // 1. Create the main container
         const $tooltipWrapper = $('<span class="tooltip-wrapper"></span>');
-        
-        // 2. Create the 'i' icon (no longer needs the 'title' attribute)
-        const $errorIcon = $('<span class="namespace-error-icon">i</span>');
-        
-        // 3. Create the element that will hold the tooltip text
+        const $errorIcon = $('<span class="namespace-error-icon">' + errorCount + '</span>');
         const $tooltipText = $('<span class="custom-tooltip-text">' + tooltipMessage + '</span>');
         
-        // 4. Assemble the parts: the icon and text go inside the container
         $tooltipWrapper.append($errorIcon).append($tooltipText);
-        
-        // 5. Insert the complete container after the input field
         $field.after($tooltipWrapper);
       });
       
-      messages.add('Validation complete: Errors were found.', { type: 'error' });
+      messages.add('Validation complete: ' + invalidItems.length + ' fields have errors.', { type: 'error' });
 
     } else {
       messages.add('Validation complete: No errors were found.', { type: 'status' });
