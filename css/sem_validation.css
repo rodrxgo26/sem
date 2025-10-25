@@ -72,8 +72,6 @@
   border-radius: 50%;
   margin-left: 8px; /* This will be overridden by the new rules but is good fallback */
   vertical-align: middle;
-
-  /* --- NEW POSITIONING RULES --- */
   position: relative;         /* Allows us to move the element */
   z-index: 10;                /* Ensures the badge stays on top of the button */
   margin-left: -38px;         /* Pulls the badge to the left, over the button */

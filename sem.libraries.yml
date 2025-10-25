@@ -32,3 +32,4 @@ sem_custom_validation:
   dependencies:
     - core/jquery
     - core/drupal
+    - core/drupal.once

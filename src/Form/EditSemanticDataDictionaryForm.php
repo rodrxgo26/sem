@@ -132,6 +132,7 @@ class EditSemanticDataDictionaryForm extends FormBase {
     if ($state === 'init') {
       // READ SEMANTIC_DATA_DICTIONARY
       $api = \Drupal::service('rep.api_connector');
+             \Drupal::state()->delete('my_form_validation_results');
       $uri_decode=base64_decode($uri);
       $semanticDataDictionary = $api->parseObjectResponse($api->getUri($uri_decode),'getUri');
       if ($semanticDataDictionary == NULL) {
@@ -192,7 +193,7 @@ class EditSemanticDataDictionaryForm extends FormBase {
     foreach ($states as $key => $label) {
       $form['pills_card'][$key] = [
         '#type' => 'button',
-        '#value' => $label,
+        '#value' => $label, 
         '#name' => 'button_' . $key,
         '#attributes' => [
           'class' => ['nav-link', $state === $key ? 'active' : ''],
@@ -202,7 +203,6 @@ class EditSemanticDataDictionaryForm extends FormBase {
         '#ajax' => [
           'callback' => '::pills_card_callback',
           'event' => 'click',
-          'wrapper' => 'pills-card-container',
           'progress' => ['type' => 'none'],
         ],
       ];
@@ -458,6 +458,11 @@ class EditSemanticDataDictionaryForm extends FormBase {
 
     //$form['#attached']['library'][] = 'sem/sem_list';
 
+// Load persistent validation results on tab switch
+$validation_results = \Drupal::state()->get('my_form_validation_results');
+if ($validation_results) {
+  $form['#attached']['drupalSettings']['semValidation']['results'] = $validation_results;
+}
     return $form;
   }
 
@@ -1682,6 +1687,7 @@ class EditSemanticDataDictionaryForm extends FormBase {
 
     if ($button_name === 'back') {
       // Release values cached in the editor before leaving it
+      \Drupal::state()->delete('my_form_validation_results');
       \Drupal::state()->delete('my_form_basic');
       \Drupal::state()->delete('my_form_variables');
       \Drupal::state()->delete('my_form_objects');
@@ -1773,6 +1779,7 @@ class EditSemanticDataDictionaryForm extends FormBase {
         }
 
         // Release values cached in the editor
+        \Drupal::state()->delete('my_form_validation_results');
         \Drupal::state()->delete('my_form_basic');
         \Drupal::state()->delete('my_form_variables');
         \Drupal::state()->delete('my_form_objects');
