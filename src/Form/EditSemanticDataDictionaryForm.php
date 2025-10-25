@@ -844,28 +844,35 @@ if ($validation_results) {
     return $rows;
   }
 
-  protected function updateVariables(FormStateInterface $form_state) {
-    $variables = \Drupal::state()->get('my_form_variables');
-    $input = $form_state->getUserInput();
-    if (isset($input) && is_array($input) &&
-        isset($variables) && is_array($variables)) {
+ protected function updateVariables(FormStateInterface $form_state) {
+  $input = $form_state->getUserInput();
+  $new_variables = []; // Start with a fresh array
 
-      foreach ($variables as $variable_id => $variable) {
-        if (isset($variable_id) && isset($variable)) {
-          $variables[$variable_id]['column']            = $input['variable_column_' . $variable_id] ?? '';
-          $variables[$variable_id]['attribute']         = $input['variable_attribute_' . $variable_id] ?? '';
-          $variables[$variable_id]['is_attribute_of']   = $input['variable_is_attribute_of_' . $variable_id] ?? '';
-          $variables[$variable_id]['unit']              = $input['variable_unit_' . $variable_id] ?? '';
-          $variables[$variable_id]['time']              = $input['variable_time_' . $variable_id] ?? '';
-          $variables[$variable_id]['in_relation_to']    = $input['variable_in_relation_to_' . $variable_id] ?? '';
-          $variables[$variable_id]['was_derived_from']  = $input['variable_was_derived_from_' . $variable_id] ?? '';
-        }
+  if (isset($input) && is_array($input)) {
+    // Find all 'column' fields submitted. This determines how many rows we have.
+    foreach ($input as $key => $value) {
+      if (strpos($key, 'variable_column_') === 0) {
+        // We found a row. Get its delta (the number at the end).
+        $delta = substr($key, strlen('variable_column_'));
+
+        // Reconstruct the variable item for this row from the input
+        $new_variables[] = [
+          'column'            => $input['variable_column_' . $delta] ?? '',
+          'attribute'         => $input['variable_attribute_' . $delta] ?? '',
+          'is_attribute_of'   => $input['variable_is_attribute_of_' . $delta] ?? '',
+          'unit'              => $input['variable_unit_' . $delta] ?? '',
+          'time'              => $input['variable_time_' . $delta] ?? '',
+          'in_relation_to'    => $input['variable_in_relation_to_' . $delta] ?? '',
+          'was_derived_from'  => $input['variable_was_derived_from_' . $delta] ?? '',
+        ];
       }
-      \Drupal::state()->set('my_form_variables', $variables);
     }
-    return;
   }
-
+  // Save the completely fresh array to the state.
+  // This array now includes all rows (old and new) from the DOM.
+  \Drupal::state()->set('my_form_variables', $new_variables);
+  return;
+}
   protected function populateVariables($namespaces) {
     $variables = [];
     $attributes = $this->getSemanticDataDictionary()->attributes;
@@ -1296,25 +1303,32 @@ if ($validation_results) {
   }
 
   protected function updateObjects(FormStateInterface $form_state) {
-    $objects = \Drupal::state()->get('my_form_objects');
-    $input = $form_state->getUserInput();
-    if (isset($input) && is_array($input) &&
-        isset($objects) && is_array($objects)) {
+  $input = $form_state->getUserInput();
+  $new_objects = []; // Start with a fresh array
 
-      foreach ($objects as $object_id => $object) {
-        if (isset($object_id) && isset($object)) {
-          $objects[$object_id]['column']            = $input['object_column_' . $object_id] ?? '';
-          $objects[$object_id]['entity']            = $input['object_entity_' . $object_id] ?? '';
-          $objects[$object_id]['role']              = $input['object_role_' . $object_id] ?? '';
-          $objects[$object_id]['relation']          = $input['object_relation_' . $object_id] ?? '';
-          $objects[$object_id]['in_relation_to']    = $input['object_in_relation_to_' . $object_id] ?? '';
-          $objects[$object_id]['was_derived_from']  = $input['object_was_derived_from_' . $object_id] ?? '';
-        }
+  if (isset($input) && is_array($input)) {
+    // Find all 'column' fields submitted.
+    foreach ($input as $key => $value) {
+      if (strpos($key, 'object_column_') === 0) {
+        // We found a row. Get its delta.
+        $delta = substr($key, strlen('object_column_'));
+
+        // Reconstruct the object item for this row from the input
+        $new_objects[] = [
+          'column'            => $input['object_column_' . $delta] ?? '',
+          'entity'            => $input['object_entity_' . $delta] ?? '',
+          'role'              => $input['object_role_' . $delta] ?? '',
+          'relation'          => $input['object_relation_' . $delta] ?? '',
+          'in_relation_to'    => $input['object_in_relation_to_' . $delta] ?? '',
+          'was_derived_from'  => $input['object_was_derived_from_' . $delta] ?? '',
+        ];
       }
-      \Drupal::state()->set('my_form_objects', $objects);
     }
-    return;
   }
+  // Save the fresh array to the state.
+  \Drupal::state()->set('my_form_objects', $new_objects);
+  return;
+}
 
   protected function populateObjects($namespaces) {
     $objects = [];
@@ -1536,23 +1550,30 @@ if ($validation_results) {
   }
 
   protected function updateCodes(FormStateInterface $form_state) {
-    $codes = \Drupal::state()->get('my_form_codes');
-    $input = $form_state->getUserInput();
-    if (isset($input) && is_array($input) &&
-        isset($codes) && is_array($codes)) {
+  $input = $form_state->getUserInput();
+  $new_codes = []; // Start with a fresh array
 
-      foreach ($codes as $code_id => $code) {
-        if (isset($code_id) && isset($code)) {
-          $codes[$code_id]['column']  = $input['code_column_' . $code_id] ?? '';
-          $codes[$code_id]['code']    = $input['code_code_' . $code_id] ?? '';
-          $codes[$code_id]['label']   = $input['code_label_' . $code_id] ?? '';
-          $codes[$code_id]['class']   = $input['code_class_' . $code_id] ?? '';
-        }
+  if (isset($input) && is_array($input)) {
+    // Find all 'column' fields submitted.
+    foreach ($input as $key => $value) {
+      if (strpos($key, 'code_column_') === 0) {
+        // We found a row. Get its delta.
+        $delta = substr($key, strlen('code_column_'));
+
+        // Reconstruct the code item for this row from the input
+        $new_codes[] = [
+          'column'  => $input['code_column_' . $delta] ?? '',
+          'code'    => $input['code_code_' . $delta] ?? '',
+          'label'   => $input['code_label_' . $delta] ?? '',
+          'class'   => $input['code_class_' . $delta] ?? '',
+        ];
       }
-      \Drupal::state()->set('my_form_codes', $codes);
     }
-    return;
   }
+  // Save the fresh array to the state.
+  \Drupal::state()->set('my_form_codes', $new_codes);
+  return;
+}
 
   protected function populateCodes($namespaces) {
     $codes = [];
